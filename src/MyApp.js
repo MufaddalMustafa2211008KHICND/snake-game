@@ -1,152 +1,125 @@
 import logo from './logo.svg';
 import './App.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 
 function MyApp() {
 
   const [gameCanStart, setGameCanStart] = useState(true);
   const [message, setMessage] = useState('click the canvas to focus & then press any arrow key to start :)')
-  const [moveUp, setMoveUp] = useState(190)
-  const [moveSideways, setMoveSideways] = useState(190)
+  // const [moveUp, setMoveUp] = useState(190)
+  // const [moveSideways, setMoveSideways] = useState(190)
   const [direction, setDirection] = useState('')
-  const [tail, setTail] = useState([{top:210, left:190}])
   const [total, setTotal] = useState(0)
   const [foodPos, setFoodPos] = useState({ top: 10, left: 10 })
+  const [tail, tailActionDispatch] = useReducer(tailReducer, [])
+  const [head, headActionDispatch] = useReducer(headReducer, {top: 190, left: 190})
+
+  function headReducer(state, action) {
+    switch (action.type) {
+      case 'moveUp':
+        return {...state, top: state.top-20}
+
+      case 'moveDown':
+        return {...state, top: state.top+20}
+
+      case 'moveLeft':
+        return {...state, left: state.left-20}
+
+      case 'moveRight':
+        return {...state, left: state.left+20}
+
+      case 'reenterFromBottom':
+        return {...state, top: 370}
+
+      case 'reenterFromTop':
+        return {...state, top: 10}
+
+      case 'reenterFromRight':
+        return {...state, left: 370}
+
+      case 'reenterFromLeft':
+        return {...state, left: 10}
+    
+      case 'center':
+        return {top: 190, left: 190}
+    }
+  }
 
   useEffect(() => {
-    if(gameCanStart)
-      foodLocation();
+    if (gameCanStart)
+      orderNewFood();
   }, [gameCanStart])
 
   useEffect(() => {
     const interval = setInterval(() => {
 
-      if (foodPos.top === moveUp && foodPos.left === moveSideways) {
+      if (foodEaten()) {
         setTotal(prev => prev + 1)
+        orderNewFood()
       }
 
       switch (direction) {
         case 'up':
-          if (gameCanStart && moveUp > 10) {
-            if (tail.some(elem => moveUp === elem.top+20 && moveSideways === elem.left)) {
-              snakeDies()
-            }
-            else {
-              if (tail.length !== 0) {
-                const newArr = [...tail]
-                newArr.shift()
-                newArr.push({ top: moveUp, left: moveSideways })
-                setTail(newArr)
-        
-              }
-        
-              if (foodPos.top === moveUp && foodPos.left === moveSideways) {
-                // setTotal(prev => prev + 1)
-                foodLocation()
-                setTail([...tail, { top: moveUp, left: moveSideways }])
-              }
-              setMoveUp(prev => prev - 20)
-              setMessage('Game started!')
-            }
+          if (gameCanStart && head.top === 10) {
+            // snakeDies()
+            headActionDispatch({type: 'reenterFromBottom'})
+            // setMoveUp(370)
           }
-          // else if(gameCanStart && moveUp === 10) {
-          //   setMoveUp(370)
-          // }
-          else {
+          else if (tail.some(elem => head.top === elem.top + 20 && head.left === elem.left)) {
             snakeDies()
+          }
+          else if(gameCanStart) {
+            updateTail()
+            headActionDispatch({type: 'moveUp'})
+            setMessage('Game started!')
           }
           break;
 
         case 'down':
-          if (gameCanStart && moveUp < 370) {
-            if (tail.some(elem => moveUp === elem.top-20 && moveSideways === elem.left)) {
-              snakeDies()
-            }
-            else {
-              if (tail.length !== 0) {
-                const newArr = [...tail]
-                newArr.shift()
-                newArr.push({ top: moveUp, left: moveSideways })
-                setTail(newArr)
-        
-              }
-        
-              if (foodPos.top === moveUp && foodPos.left === moveSideways) {
-                // setTotal(prev => prev + 1)
-                foodLocation()
-                setTail([...tail, { top: moveUp, left: moveSideways }])
-              }
-              setMoveUp(prev => prev + 20)
-              setMessage('Game started!')
-            }
+          if (gameCanStart && head.top === 370) {
+            // snakeDies()
+            headActionDispatch({type: 'reenterFromTop'})
+            // setMoveUp(10)
           }
-          // else if(gameCanStart && moveUp === 370) {
-          //   setMoveUp(10)
-          // }
-          else {
+          else if (tail.some(elem => head.top === elem.top - 20 && head.left === elem.left)) {
             snakeDies()
+          }
+          else if(gameCanStart) {
+            updateTail()
+            headActionDispatch({type: 'moveDown'})
+            setMessage('Game started!')
           }
           break;
 
         case 'right':
-          if (gameCanStart && moveSideways < 370) {
-            if (tail.some(elem => moveSideways === elem.left-20 && moveUp === elem.top)) {
-              snakeDies()
-            }
-            else {
-              if (tail.length !== 0) {
-                const newArr = [...tail]
-                newArr.shift()
-                newArr.push({ top: moveUp, left: moveSideways })
-                setTail(newArr)
-        
-              }
-        
-              if (foodPos.top === moveUp && foodPos.left === moveSideways) {
-                // setTotal(prev => prev + 1)
-                foodLocation()
-                setTail([...tail, { top: moveUp, left: moveSideways }])
-              }
-              setMoveSideways(prev => prev + 20)
-              setMessage('Game started!')
-            }
+          if (gameCanStart && head.left === 370) {
+            // snakeDies()
+            headActionDispatch({type: 'reenterFromLeft'})
+            // setMoveSideways(10)
           }
-          // else if (gameCanStart && moveSideways === 370) {
-          //   setMoveSideways(10)
-          // }
-          else {
+          else if (tail.some(elem => head.left === elem.left - 20 && head.top === elem.top)) {
             snakeDies()
+          }
+          else if(gameCanStart) {
+            updateTail()
+            headActionDispatch({type: 'moveRight'})
+            setMessage('Game started!')
           }
           break;
 
         case 'left':
-          if (gameCanStart && moveSideways > 10) {
-            if (tail.some(elem => moveSideways === elem.left+20 && moveUp === elem.top)) {
-              snakeDies()
-            }
-            else {
-              if (tail.length !== 0) {
-                const newArr = [...tail]
-                newArr.shift()
-                newArr.push({ top: moveUp, left: moveSideways })
-                setTail(newArr)
-        
-              }
-        
-              if (foodPos.top === moveUp && foodPos.left === moveSideways) {
-                // setTotal(prev => prev + 1)
-                foodLocation()
-                setTail([...tail, { top: moveUp, left: moveSideways }])
-              }
-              setMoveSideways(prev => prev - 20)
-              setMessage('Game started!')
-            }
+          if (gameCanStart && head.left === 10) {
+            // snakeDies()
+            headActionDispatch({type: 'reenterFromRight'})
+            // setMoveSideways(370)
           }
-          // else if(gameCanStart && moveSideways === 10) {
-          //   setMoveSideways(370)
-          // }
-          else {
+          else if (tail.some(elem => head.left === elem.left + 20 && head.top === elem.top)) {
             snakeDies()
+          }
+          else if(gameCanStart) {
+            updateTail()
+            headActionDispatch({type: 'moveLeft'})
+            setMessage('Game started!')
           }
           break;
       }
@@ -156,54 +129,71 @@ function MyApp() {
     return () => {
       return clearInterval(interval)
     }
-    
 
-  }, [moveSideways, moveUp, direction, gameCanStart, tail])
+
+  }, [head, direction, gameCanStart, tail])
+
+  function updateTail() {
+    if (foodEaten()) {
+      // orderNewFood()
+      tailActionDispatch({type: 'growTail', payload: {...head}})
+    }
+    else if (tail.length !== 0) {
+      tailActionDispatch({type: 'adjustTail', payload: {...head}})
+    }
+  }
+
+  function foodEaten() {
+    return foodPos.top === head.top && foodPos.left === head.left
+  }
+
 
   function snakeDies() {
     setGameCanStart(false)
-    setFoodPos({top: -20, left:-20})
+    setFoodPos({ top: -20, left: -20 })
+    setDirection('')
     setMessage('You Died! Press F to restart')
   }
 
   const handleKeys = (e) => {
     const key = e.key
     if (key === 'ArrowUp') {
-      if(tail[total-1]?.top === moveUp-20 && tail[total-1]?.left === moveSideways){
+      if (tail[total - 1]?.top === head.top - 20 && tail[total - 1]?.left === head.left) {
         return
       }
       setDirection('up')
     }
     else if (key === 'ArrowDown') {
-      if(tail[total-1]?.top === moveUp+20 && tail[total-1]?.left === moveSideways){
+      if (tail[total - 1]?.top === head.top + 20 && tail[total - 1]?.left === head.left) {
         return
       }
       setDirection('down')
     }
     else if (key === 'ArrowRight') {
-      if(tail[total-1]?.top === moveUp && tail[total-1]?.left === moveSideways+20){
+      if (tail[total - 1]?.top === head.top && tail[total - 1]?.left === head.left + 20) {
         return
       }
       setDirection('right')
     }
     else if (key === 'ArrowLeft') {
-      if(tail[total-1]?.top === moveUp && tail[total-1]?.left === moveSideways-20){
+      if (tail[total - 1]?.top === head.top && tail[total - 1]?.left === head.left - 20) {
         return
       }
       setDirection('left')
     }
     else if (key === 'f') {
       setTotal(0)
-      setTail([])
+      tailActionDispatch({type: 'empty'})
       setDirection('')
       setGameCanStart(true)
-      setMoveUp(190)
-      setMoveSideways(190)
+      // setMoveUp(190)
+      // setMoveSideways(190)
+      headActionDispatch({type: 'center'})
       setMessage('Boom! ready to go!! Press any arrow key to start!')
     }
   }
 
-  const foodLocation = () => {
+  function orderNewFood() {
     let x, y;
     do {
       x = 10 + (Math.floor(Math.random() * 19) * 20)
@@ -217,7 +207,7 @@ function MyApp() {
       else {
         return false
       }
-    }) || (moveUp === x && moveSideways === y));
+    }) || (head.top === x && head.left === y));
 
     setFoodPos({ top: x, left: y })
   }
@@ -228,7 +218,7 @@ function MyApp() {
       <div className='canvas' tabIndex={'0'} onKeyDown={handleKeys}>
         <Food top={foodPos.top} left={foodPos.left} />
         {tail.map(item => <Snake top={item.top} left={item.left} />)}
-        <Snake top={moveUp} left={moveSideways} headColor={'black'} />
+        <Snake top={head.top} left={head.left} headColor={'black'} />
 
       </div>
       <p style={{ fontSize: '22px' }}>{message}</p>
@@ -270,3 +260,19 @@ function Food({ top, left }) {
 }
 
 export default MyApp;
+
+function tailReducer(state, action) {
+  switch (action.type) {
+    case 'growTail':
+      return [...state, { top: action.payload.top, left: action.payload.left }]
+
+    case 'adjustTail':
+      const newArr = [...state]
+      newArr.shift()
+      newArr.push({ top: action.payload.top, left: action.payload.left })
+      return newArr
+
+    case 'empty':
+      return []
+  }
+}
